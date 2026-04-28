@@ -1,288 +1,225 @@
-# Tox21 Molecular Toxicity Prediction MLOps Pipeline
+# Tox21 Molecular Toxicity MLOps Platform
 
-This project implements an end-to-end MLOps pipeline for **molecular toxicity prediction** using the **Tox21 dataset**. The system trains multiple machine learning models on SMILES-based molecular fingerprints, tracks experiments using MLflow, deploys the best model through FastAPI, and monitors the deployed service using Prometheus and Grafana.
+[![CI Pipeline](https://github.com/rTalhaa/MLops-Deployment/actions/workflows/ci.yml/badge.svg)](https://github.com/rTalhaa/MLops-Deployment/actions/workflows/ci.yml)
 
----
+Production-oriented MLOps project for molecular toxicity prediction using the Tox21 dataset. The system converts SMILES strings into Morgan fingerprints, trains and compares multiple machine learning models, tracks experiments with MLflow, serves the selected model through FastAPI, and exposes runtime metrics for Prometheus and Grafana.
 
-## 1. Project Overview
+The current deployed model predicts the `SR-ARE` toxicity endpoint and is packaged with the repository for reproducible local serving and CI validation.
 
-```text
-Tox21 CSV Dataset
-        ↓
-SMILES Preprocessing + RDKit Parsing
-        ↓
-1024-bit Morgan Fingerprints
-        ↓
-Train 3 ML Models
-        ↓
-Track Experiments in MLflow
-        ↓
-Select Best Model by ROC-AUC
-        ↓
-Deploy Best Model with FastAPI
-        ↓
-Containerize with Docker Compose
-        ↓
-Monitor API with Prometheus
-        ↓
-Visualize Metrics in Grafana
-```
+## Table Of Contents
 
----
+- [System Overview](#system-overview)
+- [Architecture](#architecture)
+- [Model Summary](#model-summary)
+- [Repository Layout](#repository-layout)
+- [Quick Start](#quick-start)
+- [API Reference](#api-reference)
+- [Training Pipeline](#training-pipeline)
+- [Experiment Tracking](#experiment-tracking)
+- [Monitoring](#monitoring)
+- [CI/CD](#cicd)
+- [Operational Notes](#operational-notes)
+- [Troubleshooting](#troubleshooting)
 
-## 2. Models Used
+## System Overview
 
-The pipeline trains and compares three relevant molecular machine learning models:
+This project is designed as a compact, end-to-end MLOps workflow:
 
 ```text
-1. Logistic Regression
-2. Random Forest Classifier
-3. Extra Trees Classifier
+Tox21 CSV dataset
+  -> SMILES validation with RDKit
+  -> 1024-bit Morgan fingerprint generation
+  -> Multi-model training and evaluation
+  -> MLflow experiment tracking
+  -> Best model selection by ROC-AUC
+  -> FastAPI model serving
+  -> Docker Compose orchestration
+  -> Prometheus metrics collection
+  -> Grafana dashboarding
+  -> GitHub Actions CI validation
 ```
 
-The best model is selected automatically using **ROC-AUC** and saved for deployment.
+Core capabilities:
 
----
+- Train and compare Logistic Regression, Random Forest, and Extra Trees classifiers.
+- Persist the best model and model metadata under `models/`.
+- Serve predictions through a FastAPI application.
+- Expose `/metrics` for Prometheus scraping.
+- Run the API, Prometheus, and Grafana together with Docker Compose.
+- Validate the project on every push and pull request with GitHub Actions.
 
-## 3. Tech Stack
-
-| Tool | Purpose |
-|---|---|
-| Python | Core implementation |
-| RDKit | SMILES parsing and Morgan fingerprint generation |
-| scikit-learn | Model training and evaluation |
-| MLflow | Experiment tracking and model comparison |
-| FastAPI | Model serving API |
-| Docker | Containerization |
-| Docker Compose | Multi-service orchestration |
-| Prometheus | Metrics scraping and monitoring |
-| Grafana | Metrics dashboard |
-| GitHub Actions | CI/CD automation |
-
----
-
-## 4. Project Structure
+## Architecture
 
 ```text
-tox21-mlops/
-│
-├── app/
-│   └── main.py
-│
-├── data/
-│   └── tox21.csv
-│
-├── models/
-│   ├── tox21_best_model.joblib
-│   ├── model_metadata.json
-│   └── model_comparison.csv
-│
-├── monitoring/
-│   └── prometheus.yml
-│
-├── src/
-│   ├── train.py
-│   └── load_test.py
-│
-├── tests/
-│
-├── .github/
-│   └── workflows/
-│       └── ci.yml
-│
-├── Dockerfile
-├── docker-compose.yml
-├── requirements.txt
-└── README.md
+                  +--------------------+
+                  | data/tox21.csv     |
+                  +---------+----------+
+                            |
+                            v
+                  +--------------------+
+                  | src/train.py       |
+                  | RDKit + sklearn    |
+                  +----+----------+----+
+                       |          |
+                       v          v
+              +-------------+  +----------------+
+              | models/     |  | mlruns/        |
+              | joblib/json |  | MLflow runs    |
+              +------+------+  +----------------+
+                     |
+                     v
+              +----------------+
+              | app/main.py    |
+              | FastAPI API    |
+              +---+--------+---+
+                  |        |
+                  v        v
+          +----------+  +--------------------+
+          | /predict |  | /metrics           |
+          +----------+  +---------+----------+
+                                |
+                                v
+                       +----------------+
+                       | Prometheus     |
+                       +-------+--------+
+                               |
+                               v
+                       +----------------+
+                       | Grafana        |
+                       +----------------+
 ```
 
----
+## Model Summary
 
-## 5. Prerequisites
+The training pipeline selects the best model using ROC-AUC on the held-out test split.
 
-Install the following before running the project:
+| Model | Accuracy | Precision | Recall | F1 | ROC-AUC |
+|---|---:|---:|---:|---:|---:|
+| Logistic Regression | 0.7494 | 0.3443 | 0.6117 | 0.4406 | 0.7443 |
+| Random Forest | 0.7923 | 0.3846 | 0.4787 | 0.4265 | 0.7592 |
+| Extra Trees | 0.7700 | 0.3571 | 0.5319 | 0.4274 | 0.7648 |
+
+Selected model:
 
 ```text
-Python 3.10 recommended
-Docker Desktop
-Git
-VS Code or any code editor
+Model: Extra Trees
+Target: SR-ARE
+Feature type: 1024-bit Morgan fingerprints
+Selection metric: ROC-AUC
+Best ROC-AUC: 0.7648
 ```
 
-Check installation:
+The selected model is stored at `models/tox21_best_model.joblib`, with metadata in `models/model_metadata.json`.
 
-```powershell
-python --version
-docker --version
-docker compose version
-git --version
+## Repository Layout
+
+```text
+.
+|-- .github/workflows/ci.yml      # GitHub Actions CI pipeline
+|-- app/
+|   |-- __init__.py
+|   `-- main.py                   # FastAPI inference service
+|-- data/
+|   `-- tox21.csv                 # Training dataset
+|-- models/
+|   |-- model_comparison.csv      # Evaluation results
+|   |-- model_metadata.json       # Selected model metadata
+|   |-- tox21_best_model.joblib   # Model used by the API
+|   `-- tox21_rf_model.joblib     # Additional trained artifact
+|-- monitoring/
+|   `-- prometheus.yml            # Prometheus scrape config
+|-- src/
+|   |-- load_test.py              # Request generator for monitoring demo
+|   `-- train.py                  # Training and MLflow logging pipeline
+|-- tests/
+|   `-- test_api.py               # API tests
+|-- Dockerfile
+|-- docker-compose.yml
+|-- requirements.txt
+`-- README.md
 ```
 
----
+## Quick Start
 
-## 6. Setup Instructions
-
-### Step 1: Open the project folder
-
-```powershell
-cd tox21-mlops
-```
-
-### Step 2: Create virtual environment
+### 1. Create Environment
 
 ```powershell
 python -m venv venv
-```
-
-Activate it:
-
-```powershell
 venv\Scripts\activate
-```
-
-### Step 3: Install dependencies
-
-```powershell
-pip install --upgrade pip
+python -m pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-If RDKit fails through `requirements.txt`, run:
+Python 3.10 is recommended because the Docker image and CI pipeline use Python 3.10.
+
+### 2. Run Tests
 
 ```powershell
-pip install rdkit-pypi
+python -m pytest -q
 ```
 
----
-
-## 7. Dataset Setup
-
-Place the original Tox21 CSV file inside the `data/` folder and rename it as:
-
-```text
-data/tox21.csv
-```
-
-The dataset should contain:
-
-```text
-smiles
-mol_id
-NR-AR
-NR-AR-LBD
-NR-AhR
-NR-Aromatase
-NR-ER
-NR-ER-LBD
-NR-PPAR-gamma
-SR-ARE
-SR-ATAD5
-SR-HSE
-SR-MMP
-SR-p53
-```
-
-For this implementation, the selected prediction target is:
-
-```text
-SR-ARE
-```
-
----
-
-## 8. Train the Models
-
-Run:
-
-```powershell
-python src/train.py
-```
-
-This script will:
-
-```text
-Load the Tox21 CSV dataset
-Select the SR-ARE toxicity target
-Remove missing target labels
-Convert SMILES into 1024-bit Morgan fingerprints
-Train Logistic Regression, Random Forest, and Extra Trees
-Evaluate all models using Accuracy, Precision, Recall, F1-score, and ROC-AUC
-Log all experiments in MLflow
-Select the best model using ROC-AUC
-Save the best model to models/tox21_best_model.joblib
-Save metadata to models/model_metadata.json
-Save comparison results to models/model_comparison.csv
-```
-
-Expected output:
-
-```text
-Training: Logistic Regression
-Training: Random Forest
-Training: Extra Trees
-
-Best model selected:
-Best Model: Extra Trees
-Best ROC-AUC: ...
-Saved best model to: models/tox21_best_model.joblib
-```
-
----
-
-## 9. View MLflow Experiment Tracking
-
-Start MLflow:
-
-```powershell
-mlflow ui --backend-store-uri ./mlruns
-```
-
-Open:
-
-```text
-http://127.0.0.1:5000
-```
-
-You should see:
-
-```text
-Experiment: tox21_multi_model_molecular_toxicity
-Runs: Logistic Regression, Random Forest, Extra Trees
-Metrics: accuracy, precision, recall, f1_score, roc_auc, training_time_seconds
-```
-
-Stop MLflow when finished:
-
-```text
-CTRL + C
-```
-
----
-
-## 10. Run FastAPI Locally
-
-After training, run:
+### 3. Start The API Locally
 
 ```powershell
 uvicorn app.main:app --reload
 ```
 
-Open FastAPI Swagger UI:
+Open the interactive API docs:
 
 ```text
 http://127.0.0.1:8000/docs
 ```
 
-Available endpoints:
+### 4. Run The Full Stack
 
-| Endpoint | Purpose |
+```powershell
+docker compose up --build
+```
+
+Services:
+
+| Service | URL |
 |---|---|
-| `/` | Root API check |
-| `/health` | Model and service health |
-| `/predict` | Predict toxicity for a SMILES string |
-| `/metrics` | Exposes Prometheus metrics |
+| FastAPI | `http://localhost:8000/docs` |
+| Prometheus | `http://localhost:9090` |
+| Grafana | `http://localhost:3000` |
 
-Example request for `/predict`:
+Stop the stack:
+
+```powershell
+docker compose down
+```
+
+## API Reference
+
+### Health Check
+
+```http
+GET /health
+```
+
+Example response:
+
+```json
+{
+  "status": "healthy",
+  "dataset": "Tox21",
+  "target": "SR-ARE",
+  "best_model": "Extra Trees",
+  "selection_metric": "roc_auc",
+  "best_roc_auc": 0.7647705742720878,
+  "task": "molecular_toxicity_prediction"
+}
+```
+
+### Predict Toxicity
+
+```http
+POST /predict
+Content-Type: application/json
+```
+
+Request:
 
 ```json
 {
@@ -290,7 +227,7 @@ Example request for `/predict`:
 }
 ```
 
-Example response:
+Response:
 
 ```json
 {
@@ -303,249 +240,189 @@ Example response:
 }
 ```
 
-Stop FastAPI before running Docker Compose:
+Invalid SMILES strings return HTTP `400`:
 
-```text
-CTRL + C
+```json
+{
+  "detail": "Invalid SMILES string"
+}
 ```
 
----
+### Prometheus Metrics
 
-## 11. Run Full System with Docker Compose
+```http
+GET /metrics
+```
 
-Make sure port `8000` is free.
+Exposes Prometheus-compatible metrics for prediction counts, prediction errors, latency, and model loaded status.
+
+## Training Pipeline
+
+Run the training workflow:
 
 ```powershell
-docker compose down
-docker compose up --build
+python src/train.py
 ```
 
-This starts:
+The script performs:
 
-| Service | URL |
+- Dataset loading from `data/tox21.csv`.
+- Target selection for `SR-ARE`.
+- Missing-label filtering.
+- SMILES parsing and fingerprint generation with RDKit.
+- Train/test split with stratification.
+- Training for Logistic Regression, Random Forest, and Extra Trees.
+- Metric logging to MLflow.
+- Best model selection by ROC-AUC.
+- Artifact export to `models/`.
+
+Training outputs:
+
+| File | Purpose |
 |---|---|
-| FastAPI API | `http://localhost:8000/docs` |
-| Prometheus | `http://localhost:9090` |
-| Grafana | `http://localhost:3000` |
+| `models/tox21_best_model.joblib` | Serialized model loaded by FastAPI |
+| `models/model_metadata.json` | Dataset, target, feature, and selected model metadata |
+| `models/model_comparison.csv` | Comparison table for all trained models |
+| `mlruns/` | Local MLflow experiment tracking output |
 
----
+`mlruns/` is intentionally ignored by Git because it is local runtime output.
 
-## 12. Generate API Traffic
+## Experiment Tracking
 
-Prometheus and Grafana need API traffic to show meaningful metrics.
+Start the MLflow UI:
 
-Run this in a separate terminal while Docker Compose is running:
+```powershell
+mlflow ui --backend-store-uri ./mlruns
+```
+
+Open:
+
+```text
+http://127.0.0.1:5000
+```
+
+Experiment name:
+
+```text
+tox21_multi_model_molecular_toxicity
+```
+
+Tracked metrics:
+
+- Accuracy
+- Precision
+- Recall
+- F1 score
+- ROC-AUC
+- Training time
+
+## Monitoring
+
+Prometheus scrapes the FastAPI service through `monitoring/prometheus.yml`.
+
+Scrape target inside Docker Compose:
+
+```text
+tox21-api:8000
+```
+
+Generate prediction traffic:
 
 ```powershell
 python src/load_test.py
 ```
 
-This sends multiple SMILES requests to the `/predict` endpoint, including valid and invalid SMILES strings.
-
----
-
-## 13. Prometheus Monitoring
-
-Open:
-
-```text
-http://localhost:9090
-```
-
-Check targets:
-
-```text
-http://localhost:9090/targets
-```
-
-You should see:
-
-```text
-tox21-api    UP
-```
-
 Useful Prometheus queries:
 
-### Total predictions
+| Query | Purpose |
+|---|---|
+| `sum(tox21_prediction_requests_total)` | Total predictions |
+| `sum by (prediction) (tox21_prediction_requests_total)` | Prediction distribution |
+| `sum(rate(tox21_prediction_requests_total[1m]))` | Request rate |
+| `sum(tox21_prediction_errors_total)` | Prediction errors |
+| `tox21_model_loaded` | Model loaded status |
+| `rate(tox21_prediction_latency_seconds_sum[1m]) / rate(tox21_prediction_latency_seconds_count[1m])` | Average latency |
+| `histogram_quantile(0.95, sum by (le) (rate(tox21_prediction_latency_seconds_bucket[5m])))` | P95 latency |
 
-```promql
-sum(tox21_prediction_requests_total)
-```
-
-### Prediction class distribution
-
-```promql
-sum by (prediction) (tox21_prediction_requests_total)
-```
-
-### Request rate
-
-```promql
-sum(rate(tox21_prediction_requests_total[1m]))
-```
-
-### Prediction errors
-
-```promql
-sum(tox21_prediction_errors_total)
-```
-
-### Average prediction latency
-
-```promql
-rate(tox21_prediction_latency_seconds_sum[1m]) / rate(tox21_prediction_latency_seconds_count[1m])
-```
-
-### P95 prediction latency
-
-```promql
-histogram_quantile(0.95, sum by (le) (rate(tox21_prediction_latency_seconds_bucket[5m])))
-```
-
-### Model loaded status
-
-```promql
-tox21_model_loaded
-```
-
----
-
-## 14. Grafana Dashboard Setup
-
-Open:
-
-```text
-http://localhost:3000
-```
-
-Default login:
-
-```text
-Username: admin
-Password: admin
-```
-
-Add Prometheus data source:
-
-```text
-Connections → Data sources → Add data source → Prometheus
-```
-
-Use this URL inside Grafana:
+Grafana can use Prometheus as a data source at:
 
 ```text
 http://prometheus:9090
 ```
 
-Click:
+Recommended dashboard panels:
 
-```text
-Save & test
-```
+- Total prediction requests
+- Toxic vs non-toxic distribution
+- Request rate
+- Prediction errors
+- Average latency
+- P95 latency
+- Model loaded status
 
-Create a dashboard named:
+## CI/CD
 
-```text
-Tox21 Molecular Toxicity API Monitoring
-```
-
-Recommended panels:
-
-| Panel | Query | Visualization |
-|---|---|---|
-| Total Prediction Requests | `sum(tox21_prediction_requests_total)` | Stat |
-| Toxic vs Non-toxic Distribution | `sum by (prediction) (tox21_prediction_requests_total)` | Pie chart / Bar gauge |
-| Prediction Request Rate | `sum(rate(tox21_prediction_requests_total[1m]))` | Time series |
-| Prediction Errors | `sum(tox21_prediction_errors_total)` | Stat |
-| Average Prediction Latency | `rate(tox21_prediction_latency_seconds_sum[1m]) / rate(tox21_prediction_latency_seconds_count[1m])` | Time series |
-| P95 Prediction Latency | `histogram_quantile(0.95, sum by (le) (rate(tox21_prediction_latency_seconds_bucket[5m])))` | Time series |
-| Model Loaded Status | `tox21_model_loaded` | Gauge |
-
----
-
-## 15. GitHub Actions CI/CD
-
-The GitHub Actions workflow is located at:
+GitHub Actions workflow:
 
 ```text
 .github/workflows/ci.yml
 ```
 
-A simple CI workflow:
+The CI pipeline runs on pushes and pull requests targeting `main`.
 
-```yaml
-name: CI Pipeline
+Pipeline stages:
 
-on:
-  push:
-    branches: ["main"]
-  pull_request:
-    branches: ["main"]
+1. Checkout repository.
+2. Set up Python 3.10.
+3. Install dependencies from `requirements.txt` with pip caching.
+4. Verify required project files.
+5. Compile Python files for syntax validation.
+6. Run API tests with `pytest`.
+7. Build the Docker image.
 
-jobs:
-  build:
-    runs-on: ubuntu-latest
+This validates the application from a clean GitHub runner instead of relying on locally installed packages.
 
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+## Operational Notes
 
-      - name: Check files
-        run: |
-          test -f app/main.py
-          test -f src/train.py
-          test -f Dockerfile
-          test -f docker-compose.yml
+- The API loads the model at startup from `models/tox21_best_model.joblib`.
+- `models/model_metadata.json` is required for `/health` and prediction responses.
+- The service assumes 1024-bit Morgan fingerprints with radius 2.
+- The current Docker image is intended for local or demo deployment.
+- Grafana dashboards are configured manually in the current version.
+- This model is for MLOps demonstration and should not be used for clinical, regulatory, or safety-critical decisions without additional validation.
 
-      - name: Build Docker image
-        run: docker build -t tox21-api .
-```
+## Troubleshooting
 
----
+### Port 8000 Is Already In Use
 
-## 16. How to Stop Everything
-
-Stop Docker Compose:
-
-```powershell
-docker compose down
-```
-
-Stop local MLflow or FastAPI:
-
-```text
-CTRL + C
-```
-
----
-
-## 17. Troubleshooting
-
-### Error: Port 8000 already allocated
-
-This means Uvicorn or another Docker container is already using port 8000.
+Check running containers:
 
 ```powershell
 docker ps
+```
+
+Stop the API container if needed:
+
+```powershell
 docker stop tox21-api
 ```
 
-Or find the process using port 8000:
+Or identify the process using the port:
 
 ```powershell
 netstat -ano | findstr :8000
-taskkill /PID YOUR_PID /F
+taskkill /PID <PID> /F
 ```
 
-Then rerun:
+### Prometheus Target Is Down
+
+Confirm Docker Compose is running:
 
 ```powershell
-docker compose up --build
+docker compose ps
 ```
 
-### Prometheus target is DOWN
-
-Make sure `monitoring/prometheus.yml` contains:
+Confirm `monitoring/prometheus.yml` contains:
 
 ```yaml
 global:
@@ -557,90 +434,36 @@ scrape_configs:
       - targets: ["tox21-api:8000"]
 ```
 
-Then restart:
+Restart the stack:
 
 ```powershell
 docker compose down
 docker compose up --build
 ```
 
-### Grafana shows no data
+### Grafana Shows No Data
 
 Check:
 
-```text
-1. Prometheus target is UP
-2. load_test.py has been run
-3. Grafana time range is set to Last 15 minutes
-4. Prometheus data source URL is http://prometheus:9090
-```
+- Prometheus target is `UP`.
+- `python src/load_test.py` has generated traffic.
+- Grafana time range includes recent activity.
+- Prometheus data source URL is `http://prometheus:9090`.
 
-### MLflow does not show runs
+### MLflow Has No Runs
 
-Run training first:
+Train the models first:
 
 ```powershell
 python src/train.py
 ```
 
-Then:
+Then start MLflow:
 
 ```powershell
 mlflow ui --backend-store-uri ./mlruns
 ```
 
----
+## License
 
-## 18. Demo / Video Flow
-
-For the final demo video, show this order:
-
-```text
-1. Project folder structure
-2. Tox21 dataset in data/tox21.csv
-3. Run python src/train.py
-4. Show MLflow experiment with 3 model runs
-5. Show best model saved in models/
-6. Run docker compose up --build
-7. Open FastAPI /docs
-8. Send a /predict request
-9. Run python src/load_test.py
-10. Open Prometheus /targets and show tox21-api UP
-11. Show Prometheus query: sum by (prediction) (tox21_prediction_requests_total)
-12. Open Grafana dashboard
-13. Explain that MLflow tracks training, while Prometheus + Grafana monitor the deployed API
-```
-
----
-
-## 19. Key Explanation
-
-```text
-MLflow:
-Tracks training experiments and compares models.
-
-Prometheus:
-Collects live runtime metrics from the deployed FastAPI service.
-
-Grafana:
-Visualizes live prediction traffic, errors, latency, and model health.
-```
-
----
-
-## 20. Final Summary
-
-This project demonstrates a complete MLOps workflow for computational drug design:
-
-```text
-Tox21 molecular toxicity prediction
-SMILES to Morgan fingerprints
-Multi-model training
-MLflow experiment tracking
-Best model selection
-FastAPI model deployment
-Docker Compose orchestration
-Prometheus monitoring
-Grafana visualization
-GitHub Actions CI/CD
-```
+No license file is currently included. Add one before distributing or reusing this project publicly.
