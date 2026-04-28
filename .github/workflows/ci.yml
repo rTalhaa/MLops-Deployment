@@ -7,8 +7,8 @@ on:
     branches: ["main"]
 
 jobs:
-  test-and-build:
-    name: Test API and build Docker image
+  validate-and-test:
+    name: Validate and test API
     runs-on: ubuntu-latest
 
     steps:
@@ -50,5 +50,24 @@ jobs:
       - name: Run tests
         run: python -m pytest -q
 
-      - name: Build Docker image
-        run: docker build -t tox21-api:ci .
+  docker-build:
+    name: Build Docker image
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image with cache
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          load: false
+          tags: tox21-api:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
