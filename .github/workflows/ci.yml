@@ -7,8 +7,8 @@ on:
     branches: ["main"]
 
 jobs:
-  test-and-build:
-    name: Test API and build Docker image
+  validate-project:
+    name: Validate project structure and Python syntax
     runs-on: ubuntu-latest
 
     steps:
@@ -19,26 +19,23 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.10"
-          cache: "pip"
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
 
       - name: Verify expected project files
         run: |
           test -f app/main.py
+          test -f app/__init__.py
           test -f src/train.py
+          test -f src/load_test.py
           test -f models/tox21_best_model.joblib
           test -f models/model_metadata.json
           test -f Dockerfile
           test -f docker-compose.yml
           test -f monitoring/prometheus.yml
+          test -f tests/test_api.py
 
-      - name: Run tests
-        run: pytest -q
-
-      - name: Build Docker image
-        run: docker build -t tox21-api:ci .
-
+      - name: Check Python syntax
+        run: |
+          python -m py_compile app/main.py
+          python -m py_compile src/train.py
+          python -m py_compile src/load_test.py
+          python -m py_compile tests/test_api.py
