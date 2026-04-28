@@ -1,0 +1,15 @@
+.git/
+.github/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+venv/
+.venv/
+env/
+mlruns/
+Images_ForGPT/
+original_notebook.ipynb
+.env
+.env.*
+*.log
+

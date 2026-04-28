@@ -1,0 +1,7 @@
+global:
+  scrape_interval: 5s
+
+scrape_configs:
+  - job_name: "tox21-api"
+    static_configs:
+      - targets: ["tox21-api:8000"]

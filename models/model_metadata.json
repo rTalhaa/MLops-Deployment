@@ -1,0 +1,9 @@
+{
+    "dataset": "Tox21",
+    "target_column": "SR-ARE",
+    "feature_type": "Morgan fingerprints",
+    "fingerprint_bits": 1024,
+    "best_model_name": "Extra Trees",
+    "selection_metric": "roc_auc",
+    "best_roc_auc": 0.7647705742720878
+}
