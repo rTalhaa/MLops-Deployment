@@ -14,6 +14,7 @@ The current deployed model predicts the `SR-ARE` toxicity endpoint and is packag
 - [Repository Layout](#repository-layout)
 - [Quick Start](#quick-start)
 - [API Reference](#api-reference)
+- [Model Card](#model-card)
 - [Training Pipeline](#training-pipeline)
 - [Experiment Tracking](#experiment-tracking)
 - [Monitoring](#monitoring)
@@ -248,6 +249,25 @@ Invalid SMILES strings return HTTP `400`:
 }
 ```
 
+### Version Metadata
+
+```http
+GET /version
+```
+
+Example response:
+
+```json
+{
+  "app_version": "1.0.0",
+  "git_commit_sha": "unknown",
+  "model_version": "v1",
+  "best_model": "Extra Trees",
+  "target": "SR-ARE",
+  "dataset": "Tox21"
+}
+```
+
 ### Prometheus Metrics
 
 ```http
@@ -255,6 +275,10 @@ GET /metrics
 ```
 
 Exposes Prometheus-compatible metrics for prediction counts, prediction errors, latency, and model loaded status.
+
+## Model Card
+
+See `MODEL_CARD.md` for intended use, limitations, evaluation summary, and operational notes for the selected `SR-ARE` toxicity classifier.
 
 ## Training Pipeline
 

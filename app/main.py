@@ -1,5 +1,6 @@
 import time
 import json
+import os
 import joblib
 import numpy as np
 
@@ -27,6 +28,9 @@ app = FastAPI(
 
 MODEL_PATH = "models/tox21_best_model.joblib"
 METADATA_PATH = "models/model_metadata.json"
+APP_VERSION = "1.0.0"
+MODEL_VERSION = "v1"
+GIT_COMMIT_SHA = os.getenv("GIT_COMMIT_SHA", "unknown")
 
 model = joblib.load(MODEL_PATH)
 
@@ -100,6 +104,18 @@ def health():
     }
 
 
+@app.get("/version")
+def version():
+    return {
+        "app_version": APP_VERSION,
+        "git_commit_sha": GIT_COMMIT_SHA,
+        "model_version": MODEL_VERSION,
+        "best_model": model_metadata["best_model_name"],
+        "target": model_metadata["target_column"],
+        "dataset": model_metadata["dataset"],
+    }
+
+
 @app.post("/predict")
 def predict(input_data: MoleculeInput):
     try:
@@ -123,7 +139,7 @@ def predict(input_data: MoleculeInput):
             "prediction": label,
             "toxicity_probability": round(probability, 4),
             "model_used": model_metadata["best_model_name"],
-            "model_version": "v1",
+            "model_version": MODEL_VERSION,
         }
 
     except ValueError as error:

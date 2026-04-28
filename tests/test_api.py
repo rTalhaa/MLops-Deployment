@@ -24,6 +24,18 @@ def test_health_endpoint_reports_loaded_model_metadata():
     assert payload["selection_metric"] == "roc_auc"
 
 
+def test_version_endpoint_reports_runtime_metadata():
+    response = client.get("/version")
+    payload = response.json()
+
+    assert response.status_code == 200
+    assert payload["app_version"] == "1.0.0"
+    assert payload["model_version"] == "v1"
+    assert payload["best_model"] == "Extra Trees"
+    assert payload["target"] == "SR-ARE"
+    assert payload["dataset"] == "Tox21"
+
+
 def test_predict_endpoint_returns_toxicity_prediction_for_valid_smiles():
     response = client.post("/predict", json={"smiles": "CCO"})
     payload = response.json()
