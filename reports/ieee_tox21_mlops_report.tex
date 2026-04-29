@@ -4,7 +4,6 @@
 \usepackage{booktabs}
 \usepackage{array}
 \usepackage{url}
-\usepackage{hyperref}
 \usepackage{float}
 
 \title{Tox21 Molecular Toxicity Prediction Using an MLOps Deployment Pipeline}
@@ -92,16 +91,9 @@ Extra Trees & 0.7700 & 0.3571 & 0.5319 & 0.4274 & 0.7648 \\
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.48\textwidth]{../Images_ForGPT/model_1_runs.PNG}
-    \caption{MLflow run comparison captured from the project artifacts.}
+    \includegraphics[width=0.48\textwidth]{../Images_ForGPT/MLFLOW.PNG}
+    \caption{MLflow experiment tracking screenshot captured from the project artifacts.}
     \label{fig:mlflow-runs}
-\end{figure}
-
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=0.48\textwidth]{../Images_ForGPT/Model_1_Test.PNG}
-    \caption{Model evaluation screenshot captured from the project artifacts.}
-    \label{fig:model-test}
 \end{figure}
 
 \section{API Serving Layer}
@@ -131,11 +123,21 @@ The API exposes Prometheus metrics for prediction attempts, prediction outcomes,
 
 Grafana provisioning is included in the repository. The dashboard is grouped around service health, traffic quality, and latency so that panels reflect the available metrics rather than arbitrary visualizations.
 
-\begin{table}[H]
+Fig.~\ref{fig:grafana-dashboard} shows the current dashboard view included with the project artifacts.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.48\textwidth]{../Images_ForGPT/Grafana.PNG}
+    \caption{Grafana dashboard screenshot captured from the project artifacts.}
+    \label{fig:grafana-dashboard}
+\end{figure}
+
+\begin{table*}[t]
 \centering
 \caption{Prometheus Metrics Exposed by the API}
 \label{tab:prometheus}
-\begin{tabular}{ll}
+\footnotesize
+\begin{tabular}{p{0.40\textwidth}p{0.52\textwidth}}
 \toprule
 \textbf{Metric} & \textbf{Purpose} \\
 \midrule
@@ -148,7 +150,7 @@ Grafana provisioning is included in the repository. The dashboard is grouped aro
 \texttt{tox21\_model\_loaded} & Model load status gauge \\
 \bottomrule
 \end{tabular}
-\end{table}
+\end{table*}
 
 \section{CI/CD and Reproducibility}
 GitHub Actions is used for CI and CD. The CI workflow runs on pushes and pull requests targeting \texttt{main}. It installs pinned dependencies, verifies required files, compiles Python files, runs tests, checks model artifact compatibility with the runtime scikit-learn version, and builds the Docker image on pushes.

@@ -26,3 +26,10 @@ Thumbs.db
 # Logs
 *.log
 
+# LaTeX build output
+*.aux
+*.out
+*.toc
+*.fls
+*.fdb_latexmk
+*.synctex.gz

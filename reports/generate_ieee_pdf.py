@@ -232,8 +232,8 @@ def build():
             styles,
         )
     )
-    story.append(KeepTogether([scaled_image(ROOT / "Images_ForGPT" / "model_1_runs.PNG", content_width * 0.78), caption("Fig. 2. MLflow run comparison captured from the project artifacts.", styles)]))
-    story.append(KeepTogether([scaled_image(ROOT / "Images_ForGPT" / "Model_1_Test.PNG", content_width * 0.78), caption("Fig. 3. Model evaluation screenshot captured from the project artifacts.", styles)]))
+    story.append(KeepTogether([scaled_image(ROOT / "Images_ForGPT" / "MLFLOW.PNG", content_width * 0.78), caption("Fig. 2. MLflow experiment tracking screenshot captured from the project artifacts.", styles)]))
+    story.append(KeepTogether([scaled_image(ROOT / "Images_ForGPT" / "Grafana.PNG", content_width * 0.78), caption("Fig. 3. Grafana dashboard screenshot captured from the project artifacts.", styles)]))
 
     story.append(section("V. API Serving Layer", styles))
     story.append(

@@ -19,6 +19,7 @@ The current packaged model predicts the `SR-ARE` toxicity endpoint and is commit
 | Serving Stack | FastAPI + Docker |
 | Observability | Prometheus + Grafana |
 | Automation | GitHub Actions CI and GHCR image publishing |
+| IEEE Report | [`reports/ieee_tox21_mlops_report.pdf`](reports/ieee_tox21_mlops_report.pdf) |
 
 ## Table Of Contents
 
