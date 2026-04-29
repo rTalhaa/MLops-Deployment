@@ -1,13 +1,28 @@
 # Tox21 Molecular Toxicity MLOps Platform
 
 [![CI Pipeline](https://github.com/rTalhaa/MLops-Deployment/actions/workflows/ci.yml/badge.svg)](https://github.com/rTalhaa/MLops-Deployment/actions/workflows/ci.yml)
+[![CD - Publish Image](https://github.com/rTalhaa/MLops-Deployment/actions/workflows/cd.yml/badge.svg)](https://github.com/rTalhaa/MLops-Deployment/actions/workflows/cd.yml)
 
-Production-oriented MLOps project for molecular toxicity prediction using the Tox21 dataset. The system converts SMILES strings into Morgan fingerprints, trains and compares multiple machine learning models, tracks experiments with MLflow, serves the selected model through FastAPI, and exposes runtime metrics for Prometheus and Grafana.
+Production-oriented MLOps project for molecular toxicity prediction using the Tox21 dataset. The platform takes molecular SMILES strings, converts them into Morgan fingerprints, trains and compares multiple classical ML models, tracks experiments with MLflow, serves the selected model through FastAPI, and exposes live runtime telemetry through Prometheus and Grafana.
 
-The current deployed model predicts the `SR-ARE` toxicity endpoint and is packaged with the repository for reproducible local serving and CI validation.
+The current packaged model predicts the `SR-ARE` toxicity endpoint and is committed with the repository for reproducible local serving, Docker builds, and GitHub Actions validation.
+
+## At A Glance
+
+| Area | Details |
+|---|---|
+| Problem | Molecular toxicity prediction for the Tox21 `SR-ARE` target |
+| Data | `7,831` molecules from the Tox21 CSV dataset |
+| Features | `1024`-bit Morgan fingerprints generated with RDKit |
+| Models Compared | Logistic Regression, Random Forest, Extra Trees |
+| Selected Model | Extra Trees selected by ROC-AUC |
+| Serving Stack | FastAPI + Docker |
+| Observability | Prometheus + Grafana |
+| Automation | GitHub Actions CI and GHCR image publishing |
 
 ## Table Of Contents
 
+- [At A Glance](#at-a-glance)
 - [System Overview](#system-overview)
 - [Architecture](#architecture)
 - [Model Summary](#model-summary)
@@ -51,44 +66,17 @@ Core capabilities:
 
 ## Architecture
 
-```text
-                  +--------------------+
-                  | data/tox21.csv     |
-                  +---------+----------+
-                            |
-                            v
-                  +--------------------+
-                  | src/train.py       |
-                  | RDKit + sklearn    |
-                  +----+----------+----+
-                       |          |
-                       v          v
-              +-------------+  +----------------+
-              | models/     |  | mlruns/        |
-              | joblib/json |  | MLflow runs    |
-              +------+------+  +----------------+
-                     |
-                     v
-              +----------------+
-              | app/main.py    |
-              | FastAPI API    |
-              +---+--------+---+
-                  |        |
-                  v        v
-          +----------+  +--------------------+
-          | /predict |  | /metrics           |
-          +----------+  +---------+----------+
-                                |
-                                v
-                       +----------------+
-                       | Prometheus     |
-                       +-------+--------+
-                               |
-                               v
-                       +----------------+
-                       | Grafana        |
-                       +----------------+
-```
+The following diagram shows the full project flow from dataset preparation to model serving and observability:
+
+![High-Level Architecture](./High_Level_Design.png)
+
+Architecture highlights:
+
+- `src/train.py` handles preprocessing, feature generation, model comparison, and artifact export.
+- `models/` stores the committed best model, comparison results, and runtime metadata.
+- `app/main.py` serves prediction, health, version, and metrics endpoints.
+- `docker-compose.yml` runs the API, Prometheus, and Grafana together for local orchestration.
+- GitHub Actions validates the repository and publishes the API image to GHCR.
 
 ## Model Summary
 
@@ -188,6 +176,16 @@ Stop the stack:
 ```powershell
 docker compose down
 ```
+
+### 5. Key Local URLs
+
+| Surface | URL |
+|---|---|
+| FastAPI docs | `http://localhost:8000/docs` |
+| FastAPI metrics | `http://localhost:8000/metrics` |
+| Prometheus | `http://localhost:9090` |
+| Grafana | `http://localhost:3000` |
+| MLflow UI | `http://127.0.0.1:5000` |
 
 ## API Reference
 
@@ -387,6 +385,8 @@ Recommended dashboard panels:
 - P95 latency
 - Model loaded status
 
+The repository also includes a provisioned Grafana dashboard under `monitoring/grafana/dashboards/tox21-overview.json`, grouped around service health, traffic quality, and latency.
+
 ## CI/CD
 
 GitHub Actions workflow:
@@ -438,8 +438,8 @@ Optional continuous deployment trigger:
 - The API loads the model at startup from `models/tox21_best_model.joblib`.
 - `models/model_metadata.json` is required for `/health` and prediction responses.
 - The service assumes 1024-bit Morgan fingerprints with radius 2.
-- The current Docker image is intended for local or demo deployment.
-- Grafana dashboards are configured manually in the current version.
+- The current Docker image is intended for local, demo, or lightweight container deployment.
+- Grafana provisioning is committed in the repository so dashboards and data sources can be recreated consistently.
 - This model is for MLOps demonstration and should not be used for clinical, regulatory, or safety-critical decisions without additional validation.
 
 ## Troubleshooting
