@@ -47,8 +47,3 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-
-      - name: Trigger deploy webhook (optional)
-        if: ${{ secrets.DEPLOY_WEBHOOK_URL != '' }}
-        run: |
-          curl -fsS -X POST "${{ secrets.DEPLOY_WEBHOOK_URL }}"
