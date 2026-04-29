@@ -4,6 +4,7 @@ import os
 import logging
 import joblib
 import numpy as np
+import sklearn
 
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import Response
@@ -38,11 +39,15 @@ METADATA_PATH = "models/model_metadata.json"
 APP_VERSION = "1.0.0"
 MODEL_VERSION = "v1"
 GIT_COMMIT_SHA = os.getenv("GIT_COMMIT_SHA", "unknown")
+RUNTIME_SCIKIT_LEARN_VERSION = sklearn.__version__
 
 model = joblib.load(MODEL_PATH)
 
 with open(METADATA_PATH, "r") as file:
     model_metadata = json.load(file)
+
+training_versions = model_metadata.get("training_library_versions", {})
+training_sklearn_version = training_versions.get("scikit_learn", "unknown")
 
 
 prediction_counter = Counter(
@@ -94,9 +99,22 @@ logger.info(
             "best_model": model_metadata["best_model_name"],
             "target": model_metadata["target_column"],
             "dataset": model_metadata["dataset"],
+            "training_sklearn_version": training_sklearn_version,
+            "runtime_sklearn_version": RUNTIME_SCIKIT_LEARN_VERSION,
         }
     )
 )
+
+if training_sklearn_version != "unknown" and training_sklearn_version != RUNTIME_SCIKIT_LEARN_VERSION:
+    logger.warning(
+        json.dumps(
+            {
+                "event": "model_runtime_version_mismatch",
+                "training_sklearn_version": training_sklearn_version,
+                "runtime_sklearn_version": RUNTIME_SCIKIT_LEARN_VERSION,
+            }
+        )
+    )
 
 
 class MoleculeInput(BaseModel):
@@ -137,6 +155,8 @@ def health():
         "selection_metric": model_metadata["selection_metric"],
         "best_roc_auc": model_metadata["best_roc_auc"],
         "task": "molecular_toxicity_prediction",
+        "training_sklearn_version": training_sklearn_version,
+        "runtime_sklearn_version": RUNTIME_SCIKIT_LEARN_VERSION,
     }
 
 
@@ -149,6 +169,9 @@ def version():
         "best_model": model_metadata["best_model_name"],
         "target": model_metadata["target_column"],
         "dataset": model_metadata["dataset"],
+        "training_sklearn_version": training_sklearn_version,
+        "runtime_sklearn_version": RUNTIME_SCIKIT_LEARN_VERSION,
+        "trained_at_utc": model_metadata.get("trained_at_utc", "unknown"),
     }
 
 

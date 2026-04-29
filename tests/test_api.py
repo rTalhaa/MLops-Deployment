@@ -1,4 +1,5 @@
 from fastapi.testclient import TestClient
+import sklearn
 
 from app.main import app
 
@@ -22,6 +23,8 @@ def test_health_endpoint_reports_loaded_model_metadata():
     assert payload["dataset"] == "Tox21"
     assert payload["target"] == "SR-ARE"
     assert payload["selection_metric"] == "roc_auc"
+    assert payload["training_sklearn_version"] == sklearn.__version__
+    assert payload["runtime_sklearn_version"] == sklearn.__version__
 
 
 def test_version_endpoint_reports_runtime_metadata():
@@ -34,6 +37,9 @@ def test_version_endpoint_reports_runtime_metadata():
     assert payload["best_model"] == "Extra Trees"
     assert payload["target"] == "SR-ARE"
     assert payload["dataset"] == "Tox21"
+    assert payload["training_sklearn_version"] == sklearn.__version__
+    assert payload["runtime_sklearn_version"] == sklearn.__version__
+    assert payload["trained_at_utc"] != "unknown"
 
 
 def test_predict_endpoint_returns_toxicity_prediction_for_valid_smiles():

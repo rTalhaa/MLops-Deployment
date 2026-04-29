@@ -110,7 +110,7 @@ Selection metric: ROC-AUC
 Best ROC-AUC: 0.7648
 ```
 
-The selected model is stored at `models/tox21_best_model.joblib`, with metadata in `models/model_metadata.json`.
+The selected model is stored at `models/tox21_best_model.joblib`, with metadata in `models/model_metadata.json`. That metadata also records the training library versions so CI and runtime can verify artifact compatibility.
 
 ## Repository Layout
 
@@ -142,16 +142,14 @@ The selected model is stored at `models/tox21_best_model.joblib`, with metadata 
 
 ## Quick Start
 
-### 1. Create Environment
+### 1. Install Dependencies
 
 ```powershell
-python -m venv venv
-venv\Scripts\activate
 python -m pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-Python 3.10 is recommended because the Docker image and CI pipeline use Python 3.10.
+If you prefer isolated environments, you can install into a virtual environment first. Python 3.11 is recommended because the committed model artifact, Docker image, and GitHub Actions pipeline now run on Python 3.11.
 
 ### 2. Run Tests
 
@@ -209,7 +207,9 @@ Example response:
   "best_model": "Extra Trees",
   "selection_metric": "roc_auc",
   "best_roc_auc": 0.7647705742720878,
-  "task": "molecular_toxicity_prediction"
+  "task": "molecular_toxicity_prediction",
+  "training_sklearn_version": "1.8.0",
+  "runtime_sklearn_version": "1.8.0"
 }
 ```
 
@@ -264,7 +264,10 @@ Example response:
   "model_version": "v1",
   "best_model": "Extra Trees",
   "target": "SR-ARE",
-  "dataset": "Tox21"
+  "dataset": "Tox21",
+  "training_sklearn_version": "1.8.0",
+  "runtime_sklearn_version": "1.8.0",
+  "trained_at_utc": "2026-04-29T00:00:00Z"
 }
 ```
 
@@ -397,12 +400,13 @@ The CI pipeline runs on pushes and pull requests targeting `main`.
 Pipeline stages:
 
 1. Checkout repository.
-2. Set up Python 3.10.
+2. Set up Python 3.11.
 3. Install dependencies from `requirements.txt` with pip caching.
 4. Verify required project files.
 5. Compile Python files for syntax validation.
 6. Run API tests with `pytest`.
-7. Build the Docker image.
+7. Verify the committed model artifact loads without an sklearn version mismatch.
+8. Build the Docker image.
 
 This validates the application from a clean GitHub runner instead of relying on locally installed packages.
 

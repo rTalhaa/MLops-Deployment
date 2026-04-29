@@ -1,11 +1,12 @@
-import os
-import time
 import json
+import os
 import joblib
 import mlflow
 import mlflow.sklearn
 import numpy as np
 import pandas as pd
+import sklearn
+import time
 
 from rdkit import Chem
 from rdkit.Chem import AllChem
@@ -218,6 +219,15 @@ def main():
         "best_model_name": best_model_name,
         "selection_metric": "roc_auc",
         "best_roc_auc": best_score,
+        "training_library_versions": {
+            "python": os.sys.version.split()[0],
+            "scikit_learn": sklearn.__version__,
+            "numpy": np.__version__,
+            "pandas": pd.__version__,
+            "mlflow": mlflow.__version__,
+            "joblib": joblib.__version__,
+        },
+        "trained_at_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
     }
 
     with open(METADATA_PATH, "w") as file:
