@@ -53,3 +53,16 @@ def test_predict_endpoint_rejects_invalid_smiles():
     assert response.status_code == 400
     assert response.json()["detail"] == "Invalid SMILES string"
 
+
+def test_metrics_include_attempt_and_outcome_counters():
+    client.post("/predict", json={"smiles": "CCO"})
+    client.post("/predict", json={"smiles": "not-a-smiles"})
+
+    response = client.get("/metrics")
+
+    assert response.status_code == 200
+    assert "tox21_prediction_attempts_total" in response.text
+    assert 'tox21_prediction_outcomes_total{outcome="success"}' in response.text
+    assert 'tox21_prediction_outcomes_total{outcome="invalid_input"}' in response.text
+    assert 'tox21_prediction_status_codes_total{status_code="200"}' in response.text
+    assert 'tox21_prediction_status_codes_total{status_code="400"}' in response.text

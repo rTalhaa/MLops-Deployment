@@ -83,7 +83,7 @@
       "targets": [
         {
           "editorMode": "code",
-          "expr": "sum(tox21_prediction_requests_total) + sum(tox21_prediction_errors_total)",
+          "expr": "sum(tox21_prediction_attempts_total)",
           "legendFormat": "",
           "range": true,
           "refId": "A"
@@ -223,7 +223,7 @@
       "targets": [
         {
           "editorMode": "code",
-          "expr": "sum(tox21_prediction_requests_total) / (sum(tox21_prediction_requests_total) + sum(tox21_prediction_errors_total))",
+          "expr": "sum(tox21_prediction_outcomes_total{outcome=\"success\"}) / sum(tox21_prediction_attempts_total)",
           "legendFormat": "",
           "range": true,
           "refId": "A"
@@ -289,7 +289,7 @@
       "targets": [
         {
           "editorMode": "code",
-          "expr": "sum(tox21_prediction_errors_total) / (sum(tox21_prediction_requests_total) + sum(tox21_prediction_errors_total))",
+          "expr": "sum(tox21_prediction_outcomes_total{outcome=\"invalid_input\"}) / sum(tox21_prediction_attempts_total)",
           "legendFormat": "",
           "range": true,
           "refId": "A"
@@ -390,17 +390,24 @@
       "targets": [
         {
           "editorMode": "code",
-          "expr": "sum(rate(tox21_prediction_requests_total[5m]))",
-          "legendFormat": "Successful Predictions/sec",
+          "expr": "sum(rate(tox21_prediction_attempts_total[5m]))",
+          "legendFormat": "Attempts/sec",
           "range": true,
           "refId": "A"
         },
         {
           "editorMode": "code",
-          "expr": "sum(rate(tox21_prediction_errors_total[5m]))",
-          "legendFormat": "Invalid SMILES/sec",
+          "expr": "sum(rate(tox21_prediction_outcomes_total{outcome=\"success\"}[5m]))",
+          "legendFormat": "Success/sec",
           "range": true,
           "refId": "B"
+        },
+        {
+          "editorMode": "code",
+          "expr": "sum(rate(tox21_prediction_outcomes_total{outcome=\"invalid_input\"}[5m]))",
+          "legendFormat": "Invalid Input/sec",
+          "range": true,
+          "refId": "C"
         }
       ],
       "title": "Prediction Traffic",
@@ -462,13 +469,78 @@
       "targets": [
         {
           "editorMode": "code",
-          "expr": "sum by (prediction) (tox21_prediction_requests_total)",
-          "legendFormat": "{{prediction}}",
+          "expr": "sum by (status_code) (tox21_prediction_status_codes_total)",
+          "legendFormat": "{{status_code}}",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Prediction Distribution",
+      "title": "Response Status Distribution",
+      "type": "piechart"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "cfkhg9n492bk0b"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 24,
+        "x": 0,
+        "y": 19
+      },
+      "id": 8,
+      "options": {
+        "displayLabels": [
+          "name",
+          "value"
+        ],
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "pieType": "pie",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      },
+      "pluginVersion": "13.0.1",
+      "targets": [
+        {
+          "editorMode": "code",
+          "expr": "sum by (outcome) (tox21_prediction_outcomes_total)",
+          "legendFormat": "{{outcome}}",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Outcome Distribution",
       "type": "piechart"
     },
     {
@@ -477,7 +549,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 19
+        "y": 28
       },
       "id": 102,
       "panels": [],
@@ -529,7 +601,7 @@
         "h": 9,
         "w": 24,
         "x": 0,
-        "y": 20
+        "y": 29
       },
       "id": 7,
       "options": {
