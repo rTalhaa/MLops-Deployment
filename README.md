@@ -414,19 +414,20 @@ The repository includes a CD workflow that publishes the API image to GitHub Con
 .github/workflows/cd.yml
 ```
 
-On every push to `main` (and on version tags like `v1.0.0`), it builds and pushes:
+On every push to `main` and on version tags like `v1.0.0`, it builds and pushes:
 
 ```text
 ghcr.io/<owner>/tox21-api:latest
 ghcr.io/<owner>/tox21-api:<branch>
 ghcr.io/<owner>/tox21-api:<tag>
+ghcr.io/<owner>/tox21-api:<semver>         # e.g. 1.0.0, 1.0, 1
 ghcr.io/<owner>/tox21-api:sha-<short>
 ```
 
 Optional continuous deployment trigger:
 
 - Add a GitHub Actions secret named `DEPLOY_WEBHOOK_URL`.
-- The workflow will `POST` to that URL after publishing the image.
+- The workflow will `POST` to that URL after publishing the image (useful for Render/Railway deploy hooks).
 
 ## Operational Notes
 
