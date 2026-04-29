@@ -3,6 +3,8 @@ name: CD - Publish Image
 on:
   push:
     branches: ["main"]
+    tags: ["v*"]
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -36,6 +38,9 @@ jobs:
             type=raw,value=latest,enable={{is_default_branch}}
             type=ref,event=branch
             type=ref,event=tag
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
             type=sha,format=short
 
       - name: Build and push
@@ -47,3 +52,13 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Trigger deploy webhook (optional)
+        env:
+          DEPLOY_WEBHOOK_URL: ${{ secrets.DEPLOY_WEBHOOK_URL }}
+        run: |
+          if [ -n "$DEPLOY_WEBHOOK_URL" ]; then
+            curl -fsS -X POST "$DEPLOY_WEBHOOK_URL"
+          else
+            echo "DEPLOY_WEBHOOK_URL is not set; skipping deploy trigger."
+          fi
