@@ -6,6 +6,18 @@ services:
     container_name: tox21-api
     ports:
       - "8000:8000"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import sys, urllib.request; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3).status == 200 else 1)",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
 
   prometheus:
     image: prom/prometheus
@@ -15,7 +27,8 @@ services:
     volumes:
       - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
     depends_on:
-      - tox21-api
+      tox21-api:
+        condition: service_healthy
 
   grafana:
     image: grafana/grafana
@@ -28,7 +41,8 @@ services:
       - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards
       - grafana-data:/var/lib/grafana/data
     depends_on:
-      - prometheus
+      prometheus:
+        condition: service_started
 
 volumes:
   grafana-data:
