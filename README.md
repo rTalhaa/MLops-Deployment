@@ -406,6 +406,28 @@ Pipeline stages:
 
 This validates the application from a clean GitHub runner instead of relying on locally installed packages.
 
+### Continuous Delivery (Docker Image)
+
+The repository includes a CD workflow that publishes the API image to GitHub Container Registry (GHCR):
+
+```text
+.github/workflows/cd.yml
+```
+
+On every push to `main` (and on version tags like `v1.0.0`), it builds and pushes:
+
+```text
+ghcr.io/<owner>/tox21-api:latest
+ghcr.io/<owner>/tox21-api:<branch>
+ghcr.io/<owner>/tox21-api:<tag>
+ghcr.io/<owner>/tox21-api:sha-<short>
+```
+
+Optional continuous deployment trigger:
+
+- Add a GitHub Actions secret named `DEPLOY_WEBHOOK_URL`.
+- The workflow will `POST` to that URL after publishing the image.
+
 ## Operational Notes
 
 - The API loads the model at startup from `models/tox21_best_model.joblib`.
